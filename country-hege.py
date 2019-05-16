@@ -3,16 +3,18 @@ import argparse
 from ihr.hegemony import Hegemony
 from collections import defaultdict
 
-def get_pop_estimate(cc):
+def get_pop_estimate(cc, min_population):
     url = 'http://v6data.data.labs.apnic.net/ipv6-measurement/Economies/{cc}/{cc}.asns.json'.format(cc=cc)
 
     params = dict(
-        m=0.001
+        m=min_population
     )
 
     resp = requests.get(url=url, params=params)
     pop_est = resp.json() # Check the JSON Response Content documentation below
+
     return {x['as']:x for x in pop_est}
+
 
 if __name__ == '__main__':
 
@@ -25,9 +27,11 @@ if __name__ == '__main__':
                         help="don't weight by eyeball population")
     parser.add_argument('-t', '--top', type=int, default=10,
                         help="print top ASN")
+    parser.add_argument('-m', '--min_population', type=float, default=0.01,
+                        help="print top ASN")
     args = parser.parse_args()
 
-    pop_est = get_pop_estimate(args.country_code)
+    pop_est = get_pop_estimate(args.country_code, args.min_population)
     print('Found {} eyeball networks in {}'.format(len(pop_est), args.country_code))
 
     hege = Hegemony(originasns=pop_est.keys(), start="2019-05-15 00:00", end="2019-05-15 00:01")
@@ -54,5 +58,10 @@ if __name__ == '__main__':
     results = {asn:w/weight_sum for asn, w in results.items()}
     sorted_results = sorted(results.items(), key=lambda kv: kv[1])
     for i in range(1,min(len(sorted_results),args.top+1)):
-        print(sorted_results[len(sorted_results)-i])
+        asn, val = sorted_results[len(sorted_results)-i]
+        label = '-'
+        if asn in pop_est:
+            label = '+'
+
+        print('{}, {}, {}'.format(asn, val, label))
 
