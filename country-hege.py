@@ -2,6 +2,8 @@ import requests
 import argparse
 from ihr.hegemony import Hegemony
 from collections import defaultdict
+import arrow
+
 
 def get_pop_estimate(cc, min_population):
     url = 'http://v6data.data.labs.apnic.net/ipv6-measurement/Economies/{cc}/{cc}.asns.json'.format(cc=cc)
@@ -15,8 +17,10 @@ def get_pop_estimate(cc, min_population):
 
     return {x['as']:x for x in pop_est}
 
-def compute_hegemony(pop_est, args):
-    hege = Hegemony(originasns=pop_est.keys(), start="2019-05-15 00:00", end="2019-05-15 00:01")
+
+def compute_hegemony(pop_est, args, date):
+    hege = Hegemony(originasns=pop_est.keys(), 
+            start=date, end=date.shift(minutes=1))
     results = defaultdict(float)
     weight_sum = 0
 
@@ -44,7 +48,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('country_code', type=str,
-                    help='Country code')
+                        help='Country code')
     parser.add_argument('-r', '--remove_eyeball', action='count',
                         help="don't count eyeball ASes")
     parser.add_argument('-n', '--noweight', action='count',
@@ -53,14 +57,27 @@ if __name__ == '__main__':
                         help="print top ASN")
     parser.add_argument('-m', '--min_population', type=float, default=0.01,
                         help="print top ASN")
+    parser.add_argument('-d', '--date', type=str, 
+                        help='Fetch data for the given date')
     args = parser.parse_args()
 
+    # set up the date
+    date = None
+    if args.date is None:
+        # Get recent results
+        date = arrow.utcnow().shift(days=-2)
+    else:
+        date = arrow.get(args.date)
+    date = date.replace(minute=0, hour=0, second=0, microsecond=0)
+
     pop_est = get_pop_estimate(args.country_code, args.min_population)
-    print('Found {} eyeball networks in {}'.format(len(pop_est), args.country_code))
+    print('Found {} eyeball networks in {} on {}'.format(
+        len(pop_est), args.country_code, date)
+        )
 
-    sorted_results = compute_hegemony(pop_est,args)
+    sorted_results = compute_hegemony(pop_est, args, date)
 
-    for i in range(1,min(len(sorted_results),args.top+1)):
+    for i in range(1,min(len(sorted_results), args.top+1)):
         asn, val = sorted_results[len(sorted_results)-i]
         label = '-'
         if asn in pop_est:
