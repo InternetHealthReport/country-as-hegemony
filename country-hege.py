@@ -22,7 +22,7 @@ def compute_hegemony(pop_est, args, date):
     hege = Hegemony(originasns=pop_est.keys(), 
             start=date, end=date.shift(minutes=1))
     results = defaultdict(float)
-    weight_sum = 0
+    originasn_found = set()
 
     for hege_all_asn in hege.get_results():
         for hege in hege_all_asn:
@@ -30,6 +30,7 @@ def compute_hegemony(pop_est, args, date):
             w = hege['hege']
             asn = hege['asn']
             originasn = hege['originasn']
+            originasn_found.add(hege['originasn'])
 
             # don't count originasn (eyeball network)
             if args.remove_eyeball and asn==originasn:
@@ -39,7 +40,12 @@ def compute_hegemony(pop_est, args, date):
                 w  *= pop_est[originasn]['percent']
 
             results[asn] += w
-            weight_sum += w
+
+    weight_sum = 0
+    if args.noweight:
+        weight_sum = len(originasn_found)
+    else:
+        weight_sum = sum([pop_est[oasn]['percent'] for oasn in originasn_found])
 
     results = {asn:w/weight_sum for asn, w in results.items()}
     return sorted(results.items(), key=lambda kv: kv[1])
@@ -50,7 +56,8 @@ if __name__ == '__main__':
     parser.add_argument('country_code', type=str,
                         help='Country code')
     parser.add_argument('-r', '--remove_eyeball', action='count',
-                        help="don't count eyeball ASes")
+                        help="don't count origin ASes in hegemony calculation. \
+Provides only results for transit networks.")
     parser.add_argument('-n', '--noweight', action='count',
                         help="don't weight by eyeball population")
     parser.add_argument('-t', '--top', type=int, default=10,
@@ -71,7 +78,7 @@ if __name__ == '__main__':
     date = date.replace(minute=0, hour=0, second=0, microsecond=0)
 
     pop_est = get_pop_estimate(args.country_code, args.min_population)
-    print('Found {} eyeball networks in {} on {}'.format(
+    print('# Found {} eyeball networks in {} on {}'.format(
         len(pop_est), args.country_code, date)
         )
 
