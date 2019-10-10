@@ -3,6 +3,8 @@ import argparse
 from ihr.hegemony import Hegemony
 from collections import defaultdict
 import arrow
+from matplotlib import pylab as plt
+from iso3166 import countries
 
 
 def get_pop_estimate(cc, min_population):
@@ -64,31 +66,77 @@ Provides only results for transit networks.")
                         help="print top ASN")
     parser.add_argument('-m', '--min_population', type=float, default=0.01,
                         help="print top ASN")
-    parser.add_argument('-d', '--date', type=str, 
-                        help='Fetch data for the given date')
+    parser.add_argument('-s', '--start', type=str, 
+                        help='Fetch data for the given start date')
+    parser.add_argument('-e', '--end', type=str, 
+                        help='Fetch data until the given end date. You should \
+specify a start date to use that option.')
+    parser.add_argument('-p', '--plot', type=str, 
+                        help='Plot results in the given file')
     args = parser.parse_args()
 
-    # set up the date
-    date = None
-    if args.date is None:
+    # set up the start and end dates
+    date_start = None
+    date_end = None
+    if args.start is None:
         # Get recent results
-        date = arrow.utcnow().shift(days=-2)
+        date_start = arrow.utcnow().shift(days=-2)
+        date_end = date_start
     else:
-        date = arrow.get(args.date)
-    date = date.replace(minute=0, hour=0, second=0, microsecond=0)
+        date_start = arrow.get(args.start)
+        if args.end is None:
+            date_end = date_start
+        else:
+            date_end = arrow.get(args.end)
+
+    # set times to midnight
+    date_start = date_start.replace(minute=0, hour=0, second=0, microsecond=0)
+    date_end = date_end.replace(minute=0, hour=0, second=0, microsecond=0)
 
     pop_est = get_pop_estimate(args.country_code, args.min_population)
-    print('# Found {} eyeball networks in {} on {}'.format(
-        len(pop_est), args.country_code, date)
+    print('# Found {} eyeball networks in {}'.format(
+        len(pop_est), args.country_code)
         )
+    
+    # Find a good range of dates
+    plot_data = defaultdict(lambda: defaultdict(list))
+    granularity = None
+    span = date_end - date_start
+    if span.days <= 31:
+        granularity = 'day'
+    elif span.days <= 356:
+        granularity = 'month'
+    else:
+        granularity = 'year'
+    
+    for date in arrow.Arrow.range(granularity, date_start, date_end):
+        sorted_results = compute_hegemony(pop_est, args, date)
 
-    sorted_results = compute_hegemony(pop_est, args, date)
+        print("# Results for {}".format(date))
+        for i in range(1, min(len(sorted_results), args.top+1)):
+            asn, val = sorted_results[len(sorted_results)-i]
+            label = '-'
+            if asn in pop_est:
+                label = '+'
 
-    for i in range(1,min(len(sorted_results), args.top+1)):
-        asn, val = sorted_results[len(sorted_results)-i]
-        label = '-'
-        if asn in pop_est:
-            label = '+'
+            print('{}, {}, {}'.format(asn, val, label))
 
-        print('{}, {}, {}'.format(asn, val, label))
+            # keep data for plotting
+            if args.plot:
+                plot_data[asn]['time'].append(date.datetime)
+                plot_data[asn]['hege'].append(val)
 
+    # Plot the results if needed
+    if args.plot:
+        print(plot_data)
+        fig = plt.figure(figsize=(8, 3))
+        for asn, data in plot_data.items():
+            plt.plot(data['time'], data['hege'], label='AS{}'.format(asn))
+            plt.title('AS dependency of {}'.format(
+                countries.get(args.country_code).name))
+
+        plt.ylim([0, 1.05])
+        plt.legend()
+        fig.autofmt_xdate()
+        plt.tight_layout()
+        plt.savefig(args.plot)
