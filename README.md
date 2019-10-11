@@ -2,7 +2,9 @@
 
 ## Installation
 
+``````
 pip install country-as-hegemony
+``````
 
 
 ## Example
