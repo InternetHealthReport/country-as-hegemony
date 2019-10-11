@@ -1,3 +1,5 @@
+import sys
+import json
 import requests
 import argparse
 from ihr.hegemony import Hegemony
@@ -15,7 +17,10 @@ def get_pop_estimate(cc, min_population):
     )
 
     resp = requests.get(url=url, params=params)
-    pop_est = resp.json() # Check the JSON Response Content documentation below
+    try:
+        pop_est = resp.json() # Check the JSON Response Content documentation below
+    except json.decoder.JSONDecodeError:
+        sys.exit('Error: Could not fetch the population estimation from the APNIC API')
 
     return {x['as']:x for x in pop_est}
 
