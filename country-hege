@@ -3,15 +3,15 @@
 
 """Measure AS dependency of a country"""
 
-import sys
-import json
-import requests
 import argparse
-from ihr.hegemony import Hegemony
 from collections import defaultdict
+import json
+import sys
+import requests
 import arrow
-from matplotlib import pylab as plt
 from iso3166 import countries
+from matplotlib import pylab as plt
+from ihr.hegemony import Hegemony
 
 
 def get_pop_estimate(cc, min_population):
@@ -112,7 +112,7 @@ specify a start date to use that option.')
     plot_data = defaultdict(lambda: defaultdict(list))
     granularity = None
     span = date_end - date_start
-    if span.days <= 31:
+    if span.days <= 61:
         granularity = 'day'
     elif span.days <= 356:
         granularity = 'month'
@@ -138,7 +138,6 @@ specify a start date to use that option.')
 
     # Plot the results if needed
     if args.plot:
-        print(plot_data)
         fig = plt.figure(figsize=(8, 3))
         for asn, data in plot_data.items():
             plt.plot(data['time'], data['hege'], label='AS{}'.format(asn))

@@ -1,7 +1,9 @@
 # country-as-hegemony: Measuring AS dependency of a country
 
 ## Installation
-Requirement: https://github.com/InternetHealthReport/abondance
+
+pip install country-as-hegemony
+
 
 ## Example
 

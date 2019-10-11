@@ -14,6 +14,7 @@ setup(
     author='Romain Fontugne',
     url='https://github.com/InternetHealthReport/country-as-hegemony',
     packages=find_packages(exclude=('tests', 'docs')),
+    scripts=['country-hege'],
     install_requires=[
         'abondance',
         'arrow',
