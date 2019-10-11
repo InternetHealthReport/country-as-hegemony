@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""Measure AS dependency of a country"""
+
 import sys
 import json
 import requests
