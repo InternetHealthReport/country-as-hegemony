@@ -5,12 +5,14 @@
 
 import argparse
 from collections import defaultdict
+import itertools
 import json
 import sys
 import requests
 import arrow
 from iso3166 import countries
 from matplotlib import pylab as plt
+import numpy as np
 from ihr.hegemony import Hegemony
 
 
@@ -31,6 +33,8 @@ def get_pop_estimate(cc, min_population):
 
 
 def compute_hegemony(pop_est, args, date):
+    """Fetch AS Hegemony scores and aggregate the results."""
+
     hege = Hegemony(originasns=pop_est.keys(), 
             start=date, end=date.shift(minutes=1))
     results = defaultdict(float)
@@ -59,7 +63,7 @@ def compute_hegemony(pop_est, args, date):
     else:
         weight_sum = sum([pop_est[oasn]['percent'] for oasn in originasn_found])
 
-    results = {asn:w/weight_sum for asn, w in results.items()}
+    results = {asn: w/weight_sum for asn, w in results.items()}
     return sorted(results.items(), key=lambda kv: kv[1])
 
 if __name__ == '__main__':
@@ -74,8 +78,9 @@ Provides only results for transit networks.")
                         help="don't weight by eyeball population")
     parser.add_argument('-t', '--top', type=int, default=10,
                         help="print top ASN")
-    parser.add_argument('-m', '--min_population', type=float, default=0.01,
-                        help="print top ASN")
+    parser.add_argument('-m', '--min_population', type=float, default=0.1,
+                        help="Select only eyeball networks that represent more \
+than min_population% of the country Internet users. (default=0.1 %)")
     parser.add_argument('-s', '--start', type=str, 
                         help='Fetch data for the given start date')
     parser.add_argument('-e', '--end', type=str, 
@@ -83,6 +88,9 @@ Provides only results for transit networks.")
 specify a start date to use that option.')
     parser.add_argument('-p', '--plot', type=str, 
                         help='Plot results in the given file')
+    parser.add_argument('-P', '--prune', type=float, default=0,
+                        help='Prune from the plot ASNs with a low average AS \
+Hegemony. (default=0)')
     args = parser.parse_args()
 
     # set up the start and end dates
@@ -117,8 +125,10 @@ specify a start date to use that option.')
     elif span.days <= 356:
         granularity = 'month'
     else:
-        granularity = 'year'
+        granularity = 'month'
     
+    # Fetch hegemony values and keep only top values
+    prev_date = None
     for date in arrow.Arrow.range(granularity, date_start, date_end):
         sorted_results = compute_hegemony(pop_est, args, date)
 
@@ -133,19 +143,39 @@ specify a start date to use that option.')
 
             # keep data for plotting
             if args.plot:
+                # insert None for missing data points
+                if (prev_date is not None and len(plot_data[asn]['time']) and 
+                        plot_data[asn]['time'][-1] != prev_date):
+                    plot_data[asn]['time'].append(prev_date)
+                    plot_data[asn]['hege'].append(np.nan)
+
                 plot_data[asn]['time'].append(date.datetime)
                 plot_data[asn]['hege'].append(val)
 
+        prev_date = date
+
     # Plot the results if needed
     if args.plot:
+        marker = itertools.cycle(('.', '+', 'x', 'v'))
         fig = plt.figure(figsize=(8, 3))
         for asn, data in plot_data.items():
-            plt.plot(data['time'], data['hege'], label='AS{}'.format(asn))
-            plt.title('AS dependency of {}'.format(
-                countries.get(args.country_code).name))
+            if np.nanmean(data['hege']) < args.prune:
+                continue
+            plt.plot(data['time'], data['hege'], marker=next(marker), 
+                    label='AS{}'.format(asn))
+
+        country_name = countries.get(args.country_code).name
+        if args.remove_eyeball:
+            plt.title('Transit ASes to {}'.format(country_name))
+        else:
+            plt.title('AS dependency of {}'.format(country_name))
+        if args.noweight:
+            plt.ylabel('Average AS Hegemony')
+        else:
+            plt.ylabel('AS Hegemony (population)')
 
         plt.ylim([0, 1.05])
-        plt.legend()
+        plt.legend(ncol=2)
         fig.autofmt_xdate()
         plt.tight_layout()
         plt.savefig(args.plot)
