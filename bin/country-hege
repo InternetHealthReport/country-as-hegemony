@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""Measure AS dependency of a country"""
+
+import argparse
+from collections import defaultdict
+import itertools
+import json
+import sys
+import requests
+import arrow
+from iso3166 import countries
+from matplotlib import pylab as plt
+import numpy as np
+from ihr.hegemony import Hegemony
+
+
+def get_pop_estimate(cc, min_population):
+    """Fetch eyeball population estimates from APNIC"""
+
+    url = 'http://v6data.data.labs.apnic.net/ipv6-measurement/Economies/{cc}/{cc}.asns.json'.format(cc=cc)
+
+    params = dict(
+        m=min_population
+    )
+
+    resp = requests.get(url=url, params=params)
+    try:
+        pop_est = resp.json() # Check the JSON Response Content documentation below
+    except json.decoder.JSONDecodeError:
+        sys.exit('Error: Could not fetch the population estimation from the APNIC API')
+
+    return {x['as']:x['percent'] for x in pop_est}
+
+
+def get_as_classification_weights(cc, label):
+    """Read AS classification results and return a dictionary of ASN corresponding
+    to the given label and country code"""
+
+    fname = 'classifiedAS.txt'
+    asn_classif = {}
+
+    with open(fname, 'r') as fi:
+        for line in fi:
+            asn, asn_label, asn_cc = line[:-1].split(" ") 
+            if asn_label == label and asn_cc == cc:
+                asn_classif[int(asn)] = 1
+
+    return asn_classif
+
+
+def compute_hegemony(asn_weights, args, date):
+    """Fetch AS Hegemony scores and aggregate the results."""
+
+    hege = Hegemony(originasns=asn_weights.keys(), 
+            start=date, end=date.shift(minutes=1))
+    results = defaultdict(float)
+    originasn_found = set()
+
+    for hege_all_asn in hege.get_results():
+        for hege in hege_all_asn:
+
+            w = hege['hege']
+            asn = hege['asn']
+            originasn = hege['originasn']
+            originasn_found.add(hege['originasn'])
+
+            # don't count originasn (eyeball network)
+            if args.remove_selected and asn==originasn:
+                continue
+
+            if not args.noweight:
+                w  *= asn_weights[originasn]
+
+            results[asn] += w
+
+    weight_sum = 0
+    if args.noweight:
+        weight_sum = len(originasn_found)
+    else:
+        weight_sum = sum([asn_weights[oasn] for oasn in originasn_found])
+
+    results = {asn: w/weight_sum for asn, w in results.items()}
+    return sorted(results.items(), key=lambda kv: kv[1])
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('country_code', type=str,
+                        help='Country code')
+    parser.add_argument('-w', '--weights', type=str, default='pop',
+            help="Type of weights to use: pop for population or label for a \
+type of ASN."),
+    parser.add_argument('-l', '--label', type=str, default='Academic',
+            help="Type of ASN: Academic, Communications, Content, Entreprise, \
+Financial, Government, LargeTransit, Security, Stub, Other. Works only with weights \
+set to `type`."),
+    parser.add_argument('-r', '--remove_selected', action='count',
+                        help="Don't count origin ASes in hegemony calculation. \
+Provides only results for transit networks.")
+    parser.add_argument('-n', '--noweight', action='count',
+                        help="don't weight by eyeball population")
+    parser.add_argument('-t', '--top', type=int, default=10,
+                        help="print top ASN")
+    parser.add_argument('-m', '--min_population', type=float, default=0.1,
+                        help="Select only eyeball networks that represent more \
+than min_population percent of the country Internet users. (default=0.1 percent)")
+    parser.add_argument('-s', '--start', type=str, 
+                        help='Fetch data for the given start date')
+    parser.add_argument('-e', '--end', type=str, 
+                        help='Fetch data until the given end date. You should \
+specify a start date to use that option.')
+    parser.add_argument('-p', '--plot', type=str, 
+                        help='Plot results in the given file')
+    parser.add_argument('-P', '--prune', type=float, default=0,
+                        help='Prune from the plot ASNs with a low average AS \
+Hegemony. (default=0)')
+    args = parser.parse_args()
+
+    # set up the start and end dates
+    date_start = None
+    date_end = None
+    if args.start is None:
+        # Get recent results
+        date_start = arrow.utcnow().shift(days=-2)
+        date_end = date_start
+    else:
+        date_start = arrow.get(args.start)
+        if args.end is None:
+            date_end = date_start
+        else:
+            date_end = arrow.get(args.end)
+
+    # set times to midnight
+    date_start = date_start.replace(minute=0, hour=0, second=0, microsecond=0)
+    date_end = date_end.replace(minute=0, hour=0, second=0, microsecond=0)
+
+    asn_weights = None
+    if args.weights == "pop":
+        asn_weights = get_pop_estimate(args.country_code, args.min_population) 
+    elif args.weights == "label":
+        asn_weights = get_as_classification_weights(args.country_code, args.label)
+
+    print('# Selected {} networks in {}'.format(
+        len(asn_weights), args.country_code)
+        )
+    print(asn_weights)
+    
+    # Find a good range of dates
+    plot_data = defaultdict(lambda: defaultdict(list))
+    granularity = None
+    span = date_end - date_start
+    if span.days <= 61:
+        granularity = 'day'
+    elif span.days <= 356:
+        granularity = 'month'
+    else:
+        granularity = 'month'
+    
+    # Fetch hegemony values and keep only top values
+    prev_date = None
+    for date in arrow.Arrow.range(granularity, date_start, date_end):
+        sorted_results = compute_hegemony(asn_weights, args, date)
+
+        print("# Results for {}".format(date))
+        for i in range(1, min(len(sorted_results), args.top+1)):
+            asn, val = sorted_results[len(sorted_results)-i]
+            label = '-'
+            if asn in asn_weights:
+                label = '+'
+
+            print('{}, {}, {}'.format(asn, val, label))
+
+            # keep data for plotting
+            if args.plot:
+                # insert None for missing data points
+                if (prev_date is not None and len(plot_data[asn]['time']) and 
+                        plot_data[asn]['time'][-1] != prev_date):
+                    plot_data[asn]['time'].append(prev_date)
+                    plot_data[asn]['hege'].append(np.nan)
+
+                plot_data[asn]['time'].append(date.datetime)
+                plot_data[asn]['hege'].append(val)
+
+        prev_date = date
+
+    # Plot the results if needed
+    if args.plot:
+        marker = itertools.cycle(('.', '+', 'x', 'v'))
+        fig = plt.figure(figsize=(8, 3))
+        for asn, data in plot_data.items():
+            if np.nanmean(data['hege']) < args.prune:
+                continue
+            plt.plot(data['time'], data['hege'], marker=next(marker), 
+                    label='AS{}'.format(asn))
+
+        country_name = countries.get(args.country_code).name
+        if args.remove_selected:
+            plt.title('Transit ASes to {}'.format(country_name))
+        else:
+            plt.title('AS dependency of {}'.format(country_name))
+        if args.noweight:
+            plt.ylabel('Average AS Hegemony')
+        else:
+            plt.ylabel('AS Hegemony (population)')
+
+        plt.ylim([0, 1.05])
+        plt.legend(ncol=2)
+        fig.autofmt_xdate()
+        plt.tight_layout()
+        plt.savefig(args.plot)
