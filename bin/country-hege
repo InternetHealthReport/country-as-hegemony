@@ -50,6 +50,22 @@ def get_as_classification_weights(cc, label):
     return asn_classif
 
 
+def read_as_weights(fname):
+    """Read given file. The file should contain one or two columns: ASN weight"""
+
+    asn_weights = {}
+
+    with open(fname, 'r') as fi:
+        for line in fi:
+            words = line.split()
+            weight = 1
+            if len(words) > 1:
+                weight = float(words[1])
+
+            asn_weights[int(words[0])] = weight
+
+    return asn_weights
+
 def compute_hegemony(asn_weights, args, date):
     """Fetch AS Hegemony scores and aggregate the results."""
 
@@ -88,10 +104,11 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('country_code', type=str,
-                        help='Country code')
+                        help='Country code or file name.')
     parser.add_argument('-w', '--weights', type=str, default='pop',
-            help="Type of weights to use: pop for population or label for a \
-type of ASN."),
+            help="Type of weights to use: pop for population, label for a \
+type of ASN, or file to give your own list of ASNs and weights in a file \
+(one per line, separated by spaces)."),
     parser.add_argument('-l', '--label', type=str, default='Academic',
             help="Type of ASN: Academic, Communications, Content, Entreprise, \
 Financial, Government, LargeTransit, Security, Stub, Other. Works only with weights \
@@ -136,11 +153,15 @@ Hegemony. (default=0)')
     date_start = date_start.replace(minute=0, hour=0, second=0, microsecond=0)
     date_end = date_end.replace(minute=0, hour=0, second=0, microsecond=0)
 
+    # fetch weights
     asn_weights = None
     if args.weights == "pop":
         asn_weights = get_pop_estimate(args.country_code, args.min_population) 
     elif args.weights == "label":
         asn_weights = get_as_classification_weights(args.country_code, args.label)
+    elif args.weights == "file":
+        asn_weights = read_as_weights(args.country_code)
+
 
     print('# Selected {} networks in {}'.format(
         len(asn_weights), args.country_code)
@@ -168,7 +189,7 @@ Hegemony. (default=0)')
             asn, val = sorted_results[len(sorted_results)-i]
             label = '-'
             if asn in asn_weights:
-                label = '+'
+                label = asn_weights[asn]
 
             print('{}, {}, {}'.format(asn, val, label))
 
