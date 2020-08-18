@@ -2,14 +2,16 @@
 
 ## Installation
 
+``````
 pip install country-as-hegemony
+``````
 
 
 ## Example
 
 To get the AS dependencies of Japan, run the following command:
 ```
-$ python3 country-hege.py JP
+$ country-hege JP
 # Found 166 eyeball networks in JP on 2019-09-29T00:00:00+00:00
 2914, 0.27661613861709505, +
 2516, 0.25968996183607757, +
@@ -26,7 +28,7 @@ The '+' represent eyeball networks, the '-' are transit networks. These results 
 The -r option remove eyeballs networks from the AS hegemony computation.
 
 ```
-$ python3 country-hege.py JP -r
+$ country-hege JP -r
 # Found 166 eyeball networks in JP on 2019-09-29T00:00:00+00:00
 2914, 0.27580372217582483, +
 1299, 0.13595634758208053, -
