@@ -3,23 +3,34 @@ import sys
 import pandas as pd
 
 if len(sys.argv) < 2:
-    print('usage: ', sys.argv[0], ' delegated_file.txt')
+    print('usage: ', sys.argv[0], ' delegated_file.txt [africa]')
     sys.exit()
+
+countries = []
+if len(sys.argv) > 2:
+    if sys.argv[2].lower() == 'africa':
+        countries = [ 'EG', 'BJ', 'CI', 'CV', 'GH', 'GM', 'GN', 'GW', 'AO', 
+                'CF', 'CG', 'CM', 'GA', 'GQ', 'TD', 'BI', 'DJ', 'ER', 'ET', 
+                'KM', 'BW', 'MA', 'SD', 'TN', 'LR', 'ML', 'MR', 'NE', 'NG',
+                'SL', 'SN', 'TG', 'ST', 'KE', 'MG', 'MU', 'MW', 'MZ', 'RE',
+                'RW', 'SC', 'SO', 'UG', 'LS', 'NA', 'SZ', 'ZA', 'DZ', 'EH',
+                'LY', 'BF', 'SH', 'CD', 'TZ', 'YT', 'ZM', 'ZW'] 
 
 delegated_file = sys.argv[1]
 output_directory = delegated_file+'_results/'
 os.makedirs(output_directory, exist_ok=True)
 
-data = pd.read_csv(delegated_file, sep='|', header=None, 
-        names=['rir', 'cc', 'type', 'val0', 'val1', 'date', 'status'] )
+data = pd.read_csv(delegated_file, sep='|', header=None,  
+        names=['rir', 'cc', 'type', 'val0', 'val1', 'date', 'status', 'misc0', 'misc1'] )
 
-countries = data[data['status']=='allocated']['cc'].unique()
-print('Found ', len(countries), ' countries')
+if not countries:
+    countries = data[data['status']=='assigned']['cc'].unique()
+    print('Found ', len(countries), ' countries')
 
 # create AS files per country
 for cc in countries:
     asns = data[(data['cc']==cc) & 
-            (data['status'] == 'allocated') & 
+            (data['status'] == 'assigned') & 
             (data['type'] == 'asn')]['val0'].unique()
 
     filename_in = f'{output_directory}/{cc}_asns.txt'
