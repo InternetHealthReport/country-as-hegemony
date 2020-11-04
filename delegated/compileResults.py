@@ -8,7 +8,7 @@ if len(sys.argv) < 2:
 working_directory = sys.argv[1]
 fout = open(f"{working_directory}/all_results.csv", 'w')
 
-fout.write('# ASN, AS Hegemony, weight, country code, weighting scheme, only transit?')
+fout.write('#  country code, weighting scheme, only transit?, ASN, AS Hegemony, weight\n')
 
 for fullname in glob.glob(working_directory+'/*_dependencies_*.txt'):
     fname = fullname.rpartition('/')[2]
@@ -34,6 +34,6 @@ for fullname in glob.glob(working_directory+'/*_dependencies_*.txt'):
             if weight == 'ASweights':
                 weight_str = 'AS'
 
-            output_line = f'{line[:-1]}, {cc}, {weight_str}, {transit}\n'
+            output_line = f'{cc}, {weight_str}, {transit}, {line}'
             fout.write(output_line)
 
