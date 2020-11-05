@@ -140,7 +140,7 @@ Hegemony. (default=0)')
     date_end = None
     if args.start is None:
         # Get recent results
-        date_start = arrow.utcnow().shift(days=-2)
+        date_start = arrow.utcnow().shift(days=-1)
         date_end = date_start
     else:
         date_start = arrow.get(args.start)

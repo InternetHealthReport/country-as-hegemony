@@ -25,7 +25,7 @@ def parse_res_line(line):
     try:
         orig_weight = float(words[2])
     except ValueError:
-        org_weight = 0.0
+        orig_weight = 0.0
 
     return asn, hege, orig_weight
 
@@ -108,4 +108,7 @@ if __name__ == "__main__":
                 # Trigger any available delivery report callbacks from previous produce() calls
                 producer.poll(0)
 
+    # Wait for any outstanding messages to be delivered and delivery report
+    # callbacks to be triggered.
+    producer.flush()
 
