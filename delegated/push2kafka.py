@@ -94,8 +94,9 @@ if __name__ == "__main__":
 
                 # output_line = f'{cc}, {weight_str}, {transit}, {line}'
                 # fout.write(output_line)
-                result = {'cc': cc, 'weight': weight_str, 'transit_only': transit, 
-                        'asn':asn, 'hege': hege, 'original_weight': orig_weight}
+                result = {'ts': timestamp, 'cc': cc, 'weight': weight_str, 
+                        'transit_only': transit, 'asn':asn, 'hege': hege, 
+                        'original_weight': orig_weight}
                 logging.debug('going to produce something')
                 producer.produce(
                         topic, 
