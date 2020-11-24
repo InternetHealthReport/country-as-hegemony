@@ -41,9 +41,9 @@ for cc in countries:
             fp.write(f'{asn} 1\n')
 
     print('Processing ', cc)
-    os.system(f'python3 bin/country-hege -w file {filename_in} > {filename_out}_ASweights.txt')
-    os.system(f'python3 bin/country-hege -w file -r {filename_in} > {filename_out}_ASweights_onlyTransit.txt')
-    os.system(f'python3 bin/country-hege -m 0.1 {cc} > {filename_out}_eyeballWeights.txt')
-    os.system(f'python3 bin/country-hege -m 0.1 -r {cc} > {filename_out}_eyeballWeights_onlyTransit.txt')
+    os.system(f'python3 bin/country-hege -t 10000 -w file {filename_in} > {filename_out}_ASweights.txt')
+    os.system(f'python3 bin/country-hege -t 10000 -w file -r {filename_in} > {filename_out}_ASweights_onlyTransit.txt')
+    os.system(f'python3 bin/country-hege -t 10000 -m 0.01 {cc} > {filename_out}_eyeballWeights.txt')
+    os.system(f'python3 bin/country-hege -t 10000 -m 0.01 -r {cc} > {filename_out}_eyeballWeights_onlyTransit.txt')
 
 
