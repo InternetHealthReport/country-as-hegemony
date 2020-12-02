@@ -1,10 +1,20 @@
 import os
 import sys
 import pandas as pd
+import logging
 
 if len(sys.argv) < 2:
     print('usage: ', sys.argv[0], ' delegated_file.txt [africa]')
     sys.exit()
+
+# Logging 
+FORMAT = '%(asctime)s %(processName)s %(message)s'
+logging.basicConfig(
+        format=FORMAT, filename='country-hege.log' , 
+        level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S'
+        )
+logging.info("Started: %s" % sys.argv)
+logging.info("Arguments: %s" % sys.argv)
 
 countries = []
 if len(sys.argv) > 2:
@@ -25,7 +35,7 @@ data = pd.read_csv(delegated_file, sep='|', header=None,
 
 if not countries:
     countries = data[data['status']=='assigned']['cc'].unique()
-    print('Found ', len(countries), ' countries')
+    logging.info('Found ', len(countries), ' countries')
 
 # create AS files per country
 for cc in countries:
@@ -40,7 +50,7 @@ for cc in countries:
         for asn in asns:
             fp.write(f'{asn} 1\n')
 
-    print('Processing ', cc)
+    logging.info('Processing ', cc)
     os.system(f'python3 bin/country-hege -t 10000 -w file {filename_in} > {filename_out}_ASweights.txt')
     os.system(f'python3 bin/country-hege -t 10000 -w file -r {filename_in} > {filename_out}_ASweights_onlyTransit.txt')
     os.system(f'python3 bin/country-hege -t 10000 -m 0.01 {cc} > {filename_out}_eyeballWeights.txt')
