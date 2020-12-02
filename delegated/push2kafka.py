@@ -6,6 +6,7 @@ import arrow
 from confluent_kafka import Producer
 from confluent_kafka.admin import AdminClient, NewTopic
 
+MIN_HEGE = 0.0001
 
 def delivery_report(err, msg):
     """ Called once for each message produced to indicate delivery result.
@@ -71,7 +72,7 @@ if __name__ == "__main__":
         words = fname.replace('.txt','').split('_')
         cc, _, weight = words[:3]
         transit = False
-        if len(words) > 3:
+        if 'onlyTransit' in fname:
             transit = True
 
         with open(fullname, 'r') as fin:
