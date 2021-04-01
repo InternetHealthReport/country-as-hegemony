@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 if header:
                     # still in the file header
                     if line.startswith('# Results for '):
-                        timestamp = arrow.get(line.rpartition(' ')[2]).timestamp
+                        timestamp = int(arrow.get(line.rpartition(' ')[2]).timestamp())
                         header = False
                     continue
 
@@ -97,6 +97,7 @@ if __name__ == "__main__":
                         'transit_only': transit, 'asn':asn, 'hege': hege, 
                        'original_weight': orig_weight}
                 logging.debug('going to produce something')
+                print(result)
                 try: 
                     producer.produce(
                         topic, 
@@ -106,7 +107,14 @@ if __name__ == "__main__":
                         )
                 except BufferError as e:
                     logging.error(e)
-                    producer.poll(1)
+                    producer.flush()
+                    producer.produce(
+                        topic, 
+                        msgpack.packb(result, use_bin_type=True), 
+                        callback=delivery_report,
+                        timestamp = timestamp*1000
+                        )
+                    producer.poll(0)
 
                 logging.debug('produced something')
                 # Trigger any available delivery report callbacks from previous produce() calls
