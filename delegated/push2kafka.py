@@ -97,7 +97,6 @@ if __name__ == "__main__":
                         'transit_only': transit, 'asn':asn, 'hege': hege, 
                        'original_weight': orig_weight}
                 logging.debug('going to produce something')
-                print(result)
                 try: 
                     producer.produce(
                         topic, 
