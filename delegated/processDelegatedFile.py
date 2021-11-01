@@ -1,7 +1,7 @@
 import os
+import logging
 import sys
 import pandas as pd
-import logging
 
 if len(sys.argv) < 2:
     print('usage: ', sys.argv[0], ' delegated_file.txt [africa]')
@@ -30,7 +30,8 @@ output_directory = delegated_file+'_results/'
 os.makedirs(output_directory, exist_ok=True)
 
 raw_data = pd.read_csv(delegated_file, sep='|', header=None,  
-        names=['rir', 'cc', 'type', 'val0', 'val1', 'date', 'status', 'misc0', 'misc1'] )
+        names=['rir', 'cc', 'type', 'val0', 'val1', 'date', 'status', 'misc0', 'misc1'],
+        keep_default_na=False, na_values=[''])
 
 data =  raw_data[raw_data['status']=='assigned']
 

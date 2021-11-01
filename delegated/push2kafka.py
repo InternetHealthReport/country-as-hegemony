@@ -6,8 +6,6 @@ import arrow
 from confluent_kafka import Producer
 from confluent_kafka.admin import AdminClient, NewTopic
 
-MIN_HEGE = 0.0001
-
 def delivery_report(err, msg):
     """ Called once for each message produced to indicate delivery result.
         Triggered by poll() or flush(). """
@@ -82,7 +80,7 @@ if __name__ == "__main__":
                 if header:
                     # still in the file header
                     if line.startswith('# Results for '):
-                        timestamp = arrow.get(line.rpartition(' ')[2]).timestamp
+                        timestamp = int(arrow.get(line.rpartition(' ')[2]).timestamp())
                         header = False
                     continue
 
@@ -97,20 +95,31 @@ if __name__ == "__main__":
                 # fout.write(output_line)
                 result = {'ts': timestamp, 'cc': cc, 'weight': weight_str, 
                         'transit_only': transit, 'asn':asn, 'hege': hege, 
-                        'original_weight': orig_weight}
+                       'original_weight': orig_weight}
                 logging.debug('going to produce something')
-                producer.produce(
+                try: 
+                    producer.produce(
                         topic, 
                         msgpack.packb(result, use_bin_type=True), 
                         callback=delivery_report,
                         timestamp = timestamp*1000
                         )
+                except BufferError as e:
+                    logging.error(e)
+                    producer.flush()
+                    producer.produce(
+                        topic, 
+                        msgpack.packb(result, use_bin_type=True), 
+                        callback=delivery_report,
+                        timestamp = timestamp*1000
+                        )
+                    producer.poll(0)
 
                 logging.debug('produced something')
                 # Trigger any available delivery report callbacks from previous produce() calls
                 producer.poll(0)
 
-    # Wait for any outstanding messages to be delivered and delivery report
-    # callbacks to be triggered.
-    producer.flush()
+            # Wait for any outstanding messages to be delivered and delivery report
+            # callbacks to be triggered.
+            producer.flush()
 
