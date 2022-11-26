@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 
 if len(sys.argv) < 2:
-    print('usage: ', sys.argv[0], ' delegated_file.txt [africa]')
+    print('usage: ', sys.argv[0], ' delegated_file.txt [year month]')
     sys.exit()
 
 # Logging 
@@ -16,14 +16,10 @@ logging.basicConfig(
 logging.info(f'Started: {sys.argv}')
 
 countries = []
-if len(sys.argv) > 2:
-    if sys.argv[2].lower() == 'africa':
-        countries = [ 'EG', 'BJ', 'CI', 'CV', 'GH', 'GM', 'GN', 'GW', 'AO', 
-                'CF', 'CG', 'CM', 'GA', 'GQ', 'TD', 'BI', 'DJ', 'ER', 'ET', 
-                'KM', 'BW', 'MA', 'SD', 'TN', 'LR', 'ML', 'MR', 'NE', 'NG',
-                'SL', 'SN', 'TG', 'ST', 'KE', 'MG', 'MU', 'MW', 'MZ', 'RE',
-                'RW', 'SC', 'SO', 'UG', 'LS', 'NA', 'SZ', 'ZA', 'DZ', 'EH',
-                'LY', 'BF', 'SH', 'CD', 'TZ', 'YT', 'ZM', 'ZW'] 
+if len(sys.argv) > 3:
+    year = sys.argv[2]
+    month = sys.argv[3]
+
 
 delegated_file = sys.argv[1]
 output_directory = delegated_file+'_results/'

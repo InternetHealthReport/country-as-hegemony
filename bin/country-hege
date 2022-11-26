@@ -17,6 +17,8 @@ from ihr.hegemony import Hegemony
 import logging
 
 
+# TODO add function to get old population estimates based on IHR
+
 def get_pop_estimate(cc, min_population):
     """Fetch eyeball population estimates from APNIC"""
 
