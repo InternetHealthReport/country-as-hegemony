@@ -28,10 +28,24 @@ def parse_res_line(line):
 
     return asn, hege, orig_weight
 
+def create_topic(topic, replication=2, config={}):
+    """Create a kafka topic with the given replication factor and config"""
+
+    admin_client = AdminClient({'bootstrap.servers':'kafka1:9092, kafka2:9092, kafka3:9092'})
+
+    topic_list = [NewTopic(topic, num_partitions=3, replication_factor=replication, config=config)]
+    created_topic = admin_client.create_topics(topic_list)
+    for topic, f in created_topic.items():
+        try:
+            f.result()  # The result itself is None
+            logging.warning("Topic {} created".format(topic))
+        except Exception as e:
+            logging.warning("Failed to create topic {}: {}".format(topic, e))
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print('usage: ', sys.argv[0], 'resultsDirectory/')
+        print('usage: ', sys.argv[0], 'resultsDirectory/ [kafkaTopic]')
         sys.exit()
 
     # Logging 
@@ -46,16 +60,12 @@ if __name__ == "__main__":
 
     # Create kafka topic
     topic = 'ihr_hegemony_countries_ipv4'
-    admin_client = AdminClient({'bootstrap.servers':'kafka1:9092, kafka2:9092, kafka3:9092'})
-
-    topic_list = [NewTopic(topic, num_partitions=3, replication_factor=2)]
-    created_topic = admin_client.create_topics(topic_list)
-    for topic, f in created_topic.items():
-        try:
-            f.result()  # The result itself is None
-            logging.warning("Topic {} created".format(topic))
-        except Exception as e:
-            logging.warning("Failed to create topic {}: {}".format(topic, e))
+    if len(sys.argv) > 2:
+        topic = sys.argv[2]
+        # Long lasting topic for longitudinal analysis
+        create_topic(topic, replication=1, config={'log.retention.hours': '85440'})
+    else:
+        create_topic(topic, replication=2, config={})
 
     # Create producer
     producer = Producer({'bootstrap.servers': 'kafka1:9092,kafka2:9092,kafka3:9092',

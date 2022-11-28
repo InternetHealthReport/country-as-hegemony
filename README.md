@@ -42,6 +42,9 @@ $ country-hege JP -r
 3257, 0.01316708668625293, -
 ```
 
+## Notes
+
+- The IHR results before October 2020 are computed with the AS population obtained in October 15th, 2020.
 
 
 ## References
