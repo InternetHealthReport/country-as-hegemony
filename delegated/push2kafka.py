@@ -63,7 +63,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         topic = sys.argv[2]
         # Long lasting topic for longitudinal analysis
-        create_topic(topic, replication=1, config={'log.retention.hours': '85440'})
+        create_topic(topic, replication=1, config={'retention.ms': str(60*60*85440*1000)})
     else:
         create_topic(topic, replication=2, config={})
 
@@ -71,6 +71,12 @@ if __name__ == "__main__":
     producer = Producer({'bootstrap.servers': 'kafka1:9092,kafka2:9092,kafka3:9092',
         # 'linger.ms': 1000, 
         'default.topic.config': {'compression.codec': 'snappy'}}) 
+
+
+    # Given timestamp?
+    args_timestamp = None
+    if len(sys.argv) > 3:
+        args_timestamp = int(arrow.get(sys.argv[3]).timestamp())
 
     working_directory = sys.argv[1]
 
@@ -89,8 +95,11 @@ if __name__ == "__main__":
             for line in fin:
                 if header:
                     # still in the file header
-                    if line.startswith('# Results for '):
-                        timestamp = int(arrow.get(line.rpartition(' ')[2]).timestamp())
+                    if line.startswith('# Results for ') :
+                        if args_timestamp is None:
+                            timestamp = int(arrow.get(line.rpartition(' ')[2]).timestamp())
+                        elif args_timestamp is not None:
+                            timestamp = args_timestamp
                         header = False
                     continue
 

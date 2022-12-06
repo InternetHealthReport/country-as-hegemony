@@ -72,12 +72,41 @@ def read_as_weights(fname):
 def compute_hegemony(asn_weights, args, date):
     """Fetch AS Hegemony scores and aggregate the results."""
 
-    hege = Hegemony(originasns=asn_weights.keys(), 
-            start=date, end=date.shift(minutes=1))
-    results = defaultdict(float)
     originasn_found = set()
+    results = defaultdict(float)
+    all_hege_values = []
+    if args.hege_file == '':
+        all_hege_values = Hegemony(originasns=asn_weights.keys(), 
+                start=date, end=date.shift(minutes=1)).get_results()
+    else:
+        import lz4.frame
 
-    for hege_all_asn in hege.get_results():
+        # get hegemony values from file 
+        with lz4.frame.open(args.hege_file, 'r') as file:
+            line = file.readline()
+            # skip header
+            line = file.readline()
+            while len(line) > 0:
+                # remove the \n
+                line = line.decode('utf-8')[:-1]
+                date, originasn, asn, hege = line.split(',')
+                originasn = int(originasn)
+                asn = int(asn)
+
+                if date.endswith('00:00:00+00') :
+                    if originasn in asn_weights:
+                        all_hege_values.append([{
+                            'hege': float(hege),
+                            'asn': asn,
+                            'originasn': originasn,
+                        }])
+                else:
+                    break
+
+                line = file.readline()
+
+
+    for hege_all_asn in all_hege_values:
         for hege in hege_all_asn:
 
             w = hege['hege']
@@ -136,6 +165,8 @@ specify a start date to use that option.')
     parser.add_argument('-P', '--prune', type=float, default=0,
                         help='Prune from the plot ASNs with a low average AS \
 Hegemony. (default=0)')
+    parser.add_argument('--hege_file', type=str, default='',
+                        help='File containing all local AS Hegemony values.')
     args = parser.parse_args()
 
     # Logging 
