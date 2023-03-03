@@ -19,6 +19,8 @@ setup(
         'abondance',
         'arrow',
         'iso3166',
+        'matplotlib' ,
+
         ]
 )
 
