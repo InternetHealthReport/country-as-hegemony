@@ -1,0 +1,1 @@
+15 0 * * * cd /app && rm -rf data/ihr/delegated-extended* && rm -rf cache && wget https://www.nro.net/wp-content/uploads/apnic-uploads/delegated-extended -P data/ihr/ && python3 delegated/processDelegatedFile.py data/ihr/delegated-extended && python3 delegated/push2kafka.py data/ihr/delegated-extended_results/ >> /var/log/cron.log 2>&1
