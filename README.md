@@ -1,5 +1,24 @@
 # country-as-hegemony: Measuring AS dependency of a country
 
+## Installation using Docker
+
+``````
+docker build -t country-as-hegemony .
+``````
+``````
+docker run -it country-as-hegemony &
+``````
+
+* To exec into the container :
+``````
+docker ps
+docker exec -it <container_name> bash
+``````
+
+* To stop the container :
+``````
+docker stop <container_name>
+``````
 ## Installation
 
 ``````
