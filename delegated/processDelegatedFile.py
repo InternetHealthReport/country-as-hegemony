@@ -16,11 +16,11 @@ if len(sys.argv) < 2:
     sys.exit()
 
 # Logging 
-FORMAT = '%(asctime)s %(processName)s %(message)s'
 logging.basicConfig(
-        format=FORMAT, filename='country-hege.log' , 
-        level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S'
-        )
+    format='%(asctime)s %(processName)s %(message)s',
+    level=logging.info,
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[logging.StreamHandler()])
 logging.info(f'Started: {sys.argv}')
 
 countries = []

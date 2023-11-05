@@ -2,22 +2,26 @@
 
 ## Installation using Docker
 
+* To build the image:
 ``````
-docker build -t country-as-hegemony .
-``````
-``````
-docker run -it country-as-hegemony &
+docker build -t country_as_hegemony .
 ``````
 
-* To exec into the container :
+* To run the image:
 ``````
-docker ps
-docker exec -it <container_name> bash
+docker run --rm --name country_as_hegemony \
+    -e KAFKA_HOST="kafka1:9092" \
+    internethealthreport/country_as_hegemony
 ``````
 
-* To stop the container :
+* To view running container logs:
+```
+docker logs country_as_hegemony -f
+```
+
+* To stop the container:
 ``````
-docker stop <container_name>
+docker stop country_as_hegemony
 ``````
 ## Installation
 
