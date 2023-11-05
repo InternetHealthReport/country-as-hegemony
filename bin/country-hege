@@ -170,11 +170,11 @@ Hegemony. (default=0)')
     args = parser.parse_args()
 
     # Logging 
-    FORMAT = '%(asctime)s %(processName)s %(message)s'
     logging.basicConfig(
-            format=FORMAT, filename='country-hege.log' , 
-            level=logging.WARN, datefmt='%Y-%m-%d %H:%M:%S'
-            )
+        format='%(asctime)s %(processName)s %(message)s',
+        level=logging.info,
+        datefmt='%Y-%m-%d %H:%M:%S',
+        handlers=[logging.StreamHandler()])
     logging.info("Started: %s" % sys.argv)
     logging.info("Arguments: %s" % sys.argv)
 

@@ -1,4 +1,5 @@
 import sys
+import os
 import glob
 import msgpack
 import logging
@@ -31,7 +32,7 @@ def parse_res_line(line):
 def create_topic(topic, replication=2, config={}):
     """Create a kafka topic with the given replication factor and config"""
 
-    admin_client = AdminClient({'bootstrap.servers':'kafka1:9092, kafka2:9092, kafka3:9092'})
+    admin_client = AdminClient({'bootstrap.servers': KAFKA_HOST})
 
     topic_list = [NewTopic(topic, num_partitions=3, replication_factor=replication, config=config)]
     created_topic = admin_client.create_topics(topic_list)
@@ -49,11 +50,15 @@ if __name__ == "__main__":
         sys.exit()
 
     # Logging 
-    FORMAT = '%(asctime)s %(processName)s %(message)s'
     logging.basicConfig(
-            format=FORMAT, filename='ihr-kafka-country-hege.log' , 
-            level=logging.WARN, datefmt='%Y-%m-%d %H:%M:%S'
-            )
+        format='%(asctime)s %(processName)s %(message)s',
+        level=logging.info,
+        datefmt='%Y-%m-%d %H:%M:%S',
+        handlers=[logging.StreamHandler()])
+
+    global KAFKA_HOST
+    KAFKA_HOST = os.environ["KAFKA_HOST"]
+
     logging.info("Started: %s" % sys.argv)
     logging.info("Arguments: %s" % sys.argv)
 
@@ -68,7 +73,7 @@ if __name__ == "__main__":
         create_topic(topic, replication=2, config={})
 
     # Create producer
-    producer = Producer({'bootstrap.servers': 'kafka1:9092,kafka2:9092,kafka3:9092',
+    producer = Producer({'bootstrap.servers': KAFKA_HOST,
         # 'linger.ms': 1000, 
         'default.topic.config': {'compression.codec': 'snappy'}}) 
 
