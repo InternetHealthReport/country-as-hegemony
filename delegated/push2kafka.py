@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     # Create kafka topic
     topic = 'ihr_hegemony_countries_ipv4'
-    admin_client = AdminClient({'bootstrap.servers':'kafka1:9092, kafka2:9092, kafka3:9092'})
+    admin_client = AdminClient({'bootstrap.servers':'kafka1.storage.iijlab.net:9092, kafka2.storage.iijlab.net:9092, kafka3.storage.iijlab.net:9092'})
 
     topic_list = [NewTopic(topic, num_partitions=3, replication_factor=2)]
     created_topic = admin_client.create_topics(topic_list)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
             logging.warning("Failed to create topic {}: {}".format(topic, e))
 
     # Create producer
-    producer = Producer({'bootstrap.servers': 'kafka1:9092,kafka2:9092,kafka3:9092',
+    producer = Producer({'bootstrap.servers': 'kafka1.storage.iijlab.net:9092,kafka2.storage.iijlab.net:9092,kafka3.storage.iijlab.net:9092',
         # 'linger.ms': 1000, 
         'default.topic.config': {'compression.codec': 'snappy'}}) 
 
