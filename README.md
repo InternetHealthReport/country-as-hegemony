@@ -1,5 +1,24 @@
 # country-as-hegemony: Measuring AS dependency of a country
 
+## Installation using Docker
+
+``````
+docker build -t country-as-hegemony .
+``````
+``````
+docker run -it country-as-hegemony &
+``````
+
+* To exec into the container :
+``````
+docker ps
+docker exec -it <container_name> bash
+``````
+
+* To stop the container :
+``````
+docker stop <container_name>
+``````
 ## Installation
 
 ``````
@@ -41,8 +60,6 @@ $ country-hege JP -r
 2519, 0.01604299099396895, +
 3257, 0.01316708668625293, -
 ```
-
-
 
 ## References
 This is a follow up of the work done at APRICOT19 Hackathon: https://github.com/munhyunsu/APRICOT19

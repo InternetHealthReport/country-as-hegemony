@@ -28,10 +28,24 @@ def parse_res_line(line):
 
     return asn, hege, orig_weight
 
+def create_topic(topic, replication=2, config={}):
+    """Create a kafka topic with the given replication factor and config"""
+
+    admin_client = AdminClient({'bootstrap.servers':'kafka1.storage.iijlab.net:9092, kafka2.storage.iijlab.net:9092, kafka3.storage.iijlab.net:9092'})
+
+    topic_list = [NewTopic(topic, num_partitions=3, replication_factor=replication, config=config)]
+    created_topic = admin_client.create_topics(topic_list)
+    for topic, f in created_topic.items():
+        try:
+            f.result()  # The result itself is None
+            logging.warning("Topic {} created".format(topic))
+        except Exception as e:
+            logging.warning("Failed to create topic {}: {}".format(topic, e))
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print('usage: ', sys.argv[0], 'resultsDirectory/')
+        print('usage: ', sys.argv[0], 'resultsDirectory/ [kafkaTopic]')
         sys.exit()
 
     # Logging 
@@ -43,24 +57,23 @@ if __name__ == "__main__":
     logging.info("Started: %s" % sys.argv)
     logging.info("Arguments: %s" % sys.argv)
 
-
-    # Create kafka topic
-    topic = 'ihr_hegemony_countries_ipv4'
-    admin_client = AdminClient({'bootstrap.servers':'kafka1.storage.iijlab.net:9092, kafka2.storage.iijlab.net:9092, kafka3.storage.iijlab.net:9092'})
-
-    topic_list = [NewTopic(topic, num_partitions=3, replication_factor=2)]
-    created_topic = admin_client.create_topics(topic_list)
-    for topic, f in created_topic.items():
-        try:
-            f.result()  # The result itself is None
-            logging.warning("Topic {} created".format(topic))
-        except Exception as e:
-            logging.warning("Failed to create topic {}: {}".format(topic, e))
+    if len(sys.argv) > 2:
+        topic = sys.argv[2]
+        # Long lasting topic for longitudinal analysis
+        create_topic(topic, replication=1, config={'retention.ms': str(60*60*85440*1000)})
+    else:
+        create_topic(topic, replication=2, config={})
 
     # Create producer
     producer = Producer({'bootstrap.servers': 'kafka1.storage.iijlab.net:9092,kafka2.storage.iijlab.net:9092,kafka3.storage.iijlab.net:9092',
         # 'linger.ms': 1000, 
         'default.topic.config': {'compression.codec': 'snappy'}}) 
+
+
+    # Given timestamp?
+    args_timestamp = None
+    if len(sys.argv) > 3:
+        args_timestamp = int(arrow.get(sys.argv[3]).timestamp())
 
     working_directory = sys.argv[1]
 
@@ -79,8 +92,11 @@ if __name__ == "__main__":
             for line in fin:
                 if header:
                     # still in the file header
-                    if line.startswith('# Results for '):
-                        timestamp = int(arrow.get(line.rpartition(' ')[2]).timestamp())
+                    if line.startswith('# Results for ') :
+                        if args_timestamp is None:
+                            timestamp = int(arrow.get(line.rpartition(' ')[2]).timestamp())
+                        elif args_timestamp is not None:
+                            timestamp = args_timestamp
                         header = False
                     continue
 
