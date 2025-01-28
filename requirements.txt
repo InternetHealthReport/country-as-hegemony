@@ -1,6 +1,8 @@
+confluent_kafka
 pandas
 matplotlib
 arrow
 iso3166
 abondance
 lz4
+msgpack
