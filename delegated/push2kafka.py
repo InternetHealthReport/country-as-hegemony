@@ -57,12 +57,13 @@ if __name__ == "__main__":
     logging.info("Started: %s" % sys.argv)
     logging.info("Arguments: %s" % sys.argv)
 
+    topic = 'ihr_hegemony_countries_ipv4'
     if len(sys.argv) > 2:
         topic = sys.argv[2]
         # Long lasting topic for longitudinal analysis
         create_topic(topic, replication=1, config={'retention.ms': str(60*60*85440*1000)})
     else:
-        create_topic(topic, replication=2, config={})
+        create_topic(topic, replication=2, config={'retention.ms': '604800000'})
 
     # Create producer
     producer = Producer({'bootstrap.servers': 'kafka1.storage.iijlab.net:9092,kafka2.storage.iijlab.net:9092,kafka3.storage.iijlab.net:9092',
