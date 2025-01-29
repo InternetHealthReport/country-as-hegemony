@@ -86,14 +86,17 @@ def compute_hegemony(asn_weights, args, date):
             line = file.readline()
             # skip header
             line = file.readline()
+            timebin = None
             while len(line) > 0:
                 # remove the \n
                 line = line.decode('utf-8')[:-1]
                 date, originasn, asn, hege = line.split(',')
+                if timebin is None:
+                    timebin = date.rpartition(' ')[2]
                 originasn = int(originasn)
                 asn = int(asn)
 
-                if date.endswith('00:00:00+00') :
+                if date.endswith(timebin) :
                     if originasn in asn_weights:
                         all_hege_values.append([{
                             'hege': float(hege),

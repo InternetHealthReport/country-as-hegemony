@@ -6,7 +6,7 @@ import pandas as pd
 import json
 
 URL_DELEGATED = 'https://ftp.ripe.net/ripe/stats/nro-stats/{year}{month:02d}{day:02d}/combined-stat'
-URL_HEGE = 'https://ihr-archive.iijlab.net/ihr/hegemony/ipv4/local/{year}/{month:02d}/{day:02d}/ihr_hegemony_ipv4_local_{year}-{month:02d}-{day:02d}.csv.lz4'
+URL_HEGE = 'https://archive.ihr.live/ihr/hegemony/ipv4/local/{year}/{month:02d}/{day:02d}/ihr_hegemony_ipv4_local_{year}-{month:02d}-{day:02d}.csv.lz4'
 FNAME_HEGE = 'ihr_hegemony_ipv4_local_{year}-{month:02d}-{day:02d}.csv.lz4' 
 URL_POP = 'https://sg-pub.ripe.net/petros/population_coverage/data_sources/data{day:02d}{month:02d}{year}_0000.json'
 FNAME_POP = 'data{day:02d}{month:02d}{year}_0000.json'
